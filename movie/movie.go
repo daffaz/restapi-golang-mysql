@@ -2,6 +2,8 @@ package movie
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"golang-mysql/config"
 	"golang-mysql/models"
@@ -72,6 +74,49 @@ func InsertMovie(context context.Context, movie models.Movie) error {
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func UpdateMovieById(context context.Context, movie models.Movie, id string) error {
+	db, err := config.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("There is some problem with the database...", err)
+	}
+
+	query := fmt.Sprintf("UPDATE %v set title ='%s', year =%d, updated_at = NOW() WHERE id = %s", table, movie.Title, movie.Year, id)
+
+	_, err = db.ExecContext(context, query)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteMovie(context context.Context, idMovie string) error {
+	db, err := config.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("There is some problem with the database...", err)
+	}
+
+	query := fmt.Sprintf("DELETE FROM %v WHERE id = %s", table, idMovie)
+
+	result, err := db.ExecContext(context, query)
+
+	if err != nil && err != sql.ErrNoRows {
+		return errors.New("Id not found")
+	}
+
+	check, err := result.RowsAffected()
+	fmt.Println(check)
+
+	if check == 0 {
+		return errors.New(err.Error())
 	}
 
 	return nil
